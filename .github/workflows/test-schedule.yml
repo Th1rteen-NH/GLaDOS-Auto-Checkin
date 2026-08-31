@@ -2,7 +2,7 @@ name: Test Schedule
 
 on:
   schedule:
-    - cron: '*/1 * * * *'   # 每5分钟一次，仅用于测试
+    - cron: '*/5 * * * *'   # 每5分钟一次，仅用于测试
   workflow_dispatch:
 
 jobs:
