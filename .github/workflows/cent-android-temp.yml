@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -15,10 +17,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
-      - name: Reconstruct project
+      - name: Reconstruct project from Git history
         run: |
+          set -euo pipefail
+          : > /tmp/project.b64
+          for i in 00 01 02 03 04 05 06 07 08; do
+            sha=$(git log --all --grep="temporary Cent Android CI payload $i" --format=%H -1)
+            test -n "$sha"
+            echo "part $i <- $sha"
+            git show "$sha:ci/project.b64.part$i" >> /tmp/project.b64
+          done
           mkdir -p /tmp/cent-project
-          cat ci/project.b64.part* | base64 -d > /tmp/cent-project.tar.xz
+          base64 -d /tmp/project.b64 > /tmp/cent-project.tar.xz
+          echo "archive sha256: $(sha256sum /tmp/cent-project.tar.xz | cut -d' ' -f1)"
+          test "$(sha256sum /tmp/cent-project.tar.xz | cut -d' ' -f1)" = "c6429658913643fb455165cd9b39a5f7804b2e2a388aade631405cd9554cf88b"
+          xz -t /tmp/cent-project.tar.xz
           tar -xJf /tmp/cent-project.tar.xz -C /tmp/cent-project
       - name: Android SDK diagnostic
         run: |
