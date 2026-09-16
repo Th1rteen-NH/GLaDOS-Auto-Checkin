@@ -1,0 +1,33 @@
+name: Cent Android temp build
+on:
+  push:
+    branches: [ cent-android-ci-temp ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: yes | sdkmanager "platforms;android-37" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+      - name: Reconstruct project
+        run: |
+          mkdir -p /tmp/cent-project
+          cat ci/project.b64.part* | base64 -d > /tmp/cent-project.tar.xz
+          tar -xJf /tmp/cent-project.tar.xz -C /tmp/cent-project
+      - name: Assemble debug APK
+        working-directory: /tmp/cent-project
+        run: gradle --stacktrace :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cent-android-cleanroom-debug
+          path: /tmp/cent-project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
