@@ -12,10 +12,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android SDK
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-37" "build-tools;36.0.0" "platform-tools"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
@@ -24,6 +20,11 @@ jobs:
           mkdir -p /tmp/cent-project
           cat ci/project.b64.part* | base64 -d > /tmp/cent-project.tar.xz
           tar -xJf /tmp/cent-project.tar.xz -C /tmp/cent-project
+      - name: Android SDK diagnostic
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          find "${ANDROID_HOME:-/usr/local/lib/android/sdk}" -maxdepth 2 -type d \( -name 'android-37' -o -name '36.0.0' -o -name '37.0.0' \) -print 2>/dev/null || true
       - name: Assemble debug APK
         working-directory: /tmp/cent-project
         run: gradle --stacktrace :app:assembleDebug
